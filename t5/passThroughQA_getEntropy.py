@@ -43,11 +43,6 @@ def format_time(elapsed):
 def get_default_device():
     # Force cpu
     return torch.device('cpu')
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
-        return torch.device('cpu')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -83,7 +78,7 @@ def main(args):
         print(i)
         passage = all_passages[i]
         question = all_questions[i]
-        combo = question + " [SEP] " + passage
+        combo = f"{question} [SEP] {passage}"
         inp_ids = tokenizer.encode(combo)
         if len(inp_ids) > 512:
             inp_ids = inp_ids[:512]
@@ -113,7 +108,7 @@ def main(args):
         entropy_all.append(entrop)
 
     entropy_all = np.asarray(entropy_all)
-    np.save(args.predictions_save_path + "sal_entrop.npy", entropy_all)
+    np.save(f"{args.predictions_save_path}sal_entrop.npy", entropy_all)
         
 
 if __name__ == '__main__':

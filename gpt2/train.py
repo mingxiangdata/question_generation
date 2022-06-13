@@ -41,11 +41,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -85,10 +84,22 @@ def main(args):
         #     break
         print(count)
         question, passage = ex["question"], ex["context"]
-        passage_encodings_dict = tokenizer('<|startoftext|>'+ passage + '<|endoftext|>', truncation=True, max_length=MAXLEN_passage, padding="max_length")
+        passage_encodings_dict = tokenizer(
+            f'<|startoftext|>{passage}<|endoftext|>',
+            truncation=True,
+            max_length=MAXLEN_passage,
+            padding="max_length",
+        )
+
         input_ids.append(passage_encodings_dict['input_ids'])
         input_att_msks.append(passage_encodings_dict['attention_mask'])
-        question_encodings_dict = tokenizer('<|startoftext|>'+ question + '<|endoftext|>', truncation=True, max_length=MAXLEN_question, padding="max_length")
+        question_encodings_dict = tokenizer(
+            f'<|startoftext|>{question}<|endoftext|>',
+            truncation=True,
+            max_length=MAXLEN_question,
+            padding="max_length",
+        )
+
         output_ids.append(question_encodings_dict['input_ids'])
 
     # Convert to torch tensors
@@ -98,7 +109,7 @@ def main(args):
     input_att_msks = input_att_msks.long().to(device)
     output_ids = torch.tensor(output_ids)
     output_ids = output_ids.long().to(device)
-    
+
     train_data = TensorDataset(input_ids, input_att_msks, output_ids)
     train_sampler = RandomSampler(train_data)
     train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.batch_size)
@@ -143,7 +154,7 @@ def main(args):
     # For each batch of training data...
         for step, batch in enumerate(train_dataloader):
             # Progress update every 40 batches.
-            if step % 40 == 0 and not step == 0:
+            if step % 40 == 0 and step != 0:
                 # Calculate elapsed time in minutes.
                 elapsed = format_time(time.time() - t0)
                 # Report progress.
@@ -177,7 +188,7 @@ def main(args):
         print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
 
     # Save the model to a file
-    file_path = args.save_path+'gpt2_gen_seed'+str(args.seed)+'.pt'
+    file_path = f'{args.save_path}gpt2_gen_seed{str(args.seed)}.pt'
     torch.save(model, file_path)
 
 

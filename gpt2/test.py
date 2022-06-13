@@ -36,11 +36,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -82,7 +81,10 @@ def main(args):
         print(passage)
         print("-------")
 
-        generated = torch.tensor(tokenizer.encode('<|startoftext|>'+ passage + '<|endoftext|>')).unsqueeze(0)
+        generated = torch.tensor(
+            tokenizer.encode(f'<|startoftext|>{passage}<|endoftext|>')
+        ).unsqueeze(0)
+
         generated = generated.to(device)
 
         sample_outputs = model.generate(

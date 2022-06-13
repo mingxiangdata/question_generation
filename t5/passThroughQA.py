@@ -40,11 +40,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -77,7 +76,7 @@ def main(args):
     for i in range(len(all_passages)):
         passage = all_passages[i]
         question = all_questions[i]
-        combo = question + " [SEP] " + passage
+        combo = f"{question} [SEP] {passage}"
         inp_ids = tokenizer.encode(combo)
         if len(inp_ids) > 512:
             inp_ids = inp_ids[:512]
@@ -86,7 +85,7 @@ def main(args):
         token_type_ids.append(tok_type_ids)
 
     # Pad all sequences with 0
-    max_len = max([len(sen) for sen in input_ids])
+    max_len = max(len(sen) for sen in input_ids)
     input_ids = pad_sequences(input_ids, maxlen=max_len, dtype="long", value=0, truncating="post", padding="post")
     token_type_ids = pad_sequences(token_type_ids, maxlen=max_len, dtype="long", value=0, truncating="post", padding="post")
 
@@ -111,11 +110,8 @@ def main(args):
     pred_start_logits = []
     pred_end_logits = []
     pred_verification_logits = []
-    count = 0
-
-    for inp_id, tok_typ_id, att_msk in dl:
+    for count, (inp_id, tok_typ_id, att_msk) in enumerate(dl):
         print(count)
-        count+=1
         inp_id, tok_typ_id, att_msk = inp_id.to(device), tok_typ_id.to(device), att_msk.to(device)
         with torch.no_grad():
             start_logits, end_logits, verification_logits = model(input_ids=inp_id, attention_mask=att_msk, token_type_ids=tok_typ_id)
@@ -128,9 +124,19 @@ def main(args):
     pred_verification_logits = np.asarray(pred_verification_logits)
 
 
-    np.save(args.predictions_save_path + "pred_start_logits_all.npy", pred_start_logits)
-    np.save(args.predictions_save_path + "pred_end_logits_all.npy", pred_end_logits)
-    np.save(args.predictions_save_path + "verification_probs_all.npy", pred_verification_logits)
+    np.save(
+        f"{args.predictions_save_path}pred_start_logits_all.npy",
+        pred_start_logits,
+    )
+
+    np.save(
+        f"{args.predictions_save_path}pred_end_logits_all.npy", pred_end_logits
+    )
+
+    np.save(
+        f"{args.predictions_save_path}verification_probs_all.npy",
+        pred_verification_logits,
+    )
 
 if __name__ == '__main__':
     args = parser.parse_args()

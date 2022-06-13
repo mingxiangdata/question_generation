@@ -185,27 +185,23 @@ class EnsembleModel:
             effective_batch_size = batch_size
             effective_batch_mult = 1
 
-        if self.config.is_encoder_decoder:
-            if decoder_start_token_id is None:
-                # see if BOS token can be used for decoder_start_token_id
-                if bos_token_id is not None:
-                    decoder_start_token_id = bos_token_id
-                elif (
-                    hasattr(self.config, "decoder")
-                    and hasattr(self.config.decoder, "bos_token_id")
-                    and self.config.decoder.bos_token_id is not None
-                ):
-                    decoder_start_token_id = self.config.decoder.bos_token_id
-                else:
-                    raise ValueError(
-                        "decoder_start_token_id or bos_token_id has to be defined for encoder-decoder generation"
-                    )                
+        if self.config.is_encoder_decoder and decoder_start_token_id is None:
+            # see if BOS token can be used for decoder_start_token_id
+            if bos_token_id is not None:
+                decoder_start_token_id = bos_token_id
+            elif (
+                hasattr(self.config, "decoder")
+                and hasattr(self.config.decoder, "bos_token_id")
+                and self.config.decoder.bos_token_id is not None
+            ):
+                decoder_start_token_id = self.config.decoder.bos_token_id
+            else:
+                raise ValueError(
+                    "decoder_start_token_id or bos_token_id has to be defined for encoder-decoder generation"
+                )                
 
 
-        encoders = []
-        for model in self.models:
-            encoders.append(model.get_encoder())
-
+        encoders = [model.get_encoder() for model in self.models]
         all_encoder_outputs = [tuple(encoder(input_ids, attention_mask=attention_mask)) for encoder in encoders]
 
         # Expand input ids if num_beams > 1 or num_return_sequences > 1

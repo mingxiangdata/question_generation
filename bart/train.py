@@ -41,11 +41,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -136,7 +135,7 @@ def main(args):
     # For each batch of training data...
         for step, batch in enumerate(train_dataloader):
             # Progress update every 40 batches.
-            if step % 40 == 0 and not step == 0:
+            if step % 40 == 0 and step != 0:
                 # Calculate elapsed time in minutes.
                 elapsed = format_time(time.time() - t0)
                 # Report progress.
@@ -148,9 +147,9 @@ def main(args):
             model.zero_grad()
             # outputs = model(input_ids=b_input_ids, attention_mask=b_att_msks, decoder_input_ids=b_output_ids, decoder_attention_mask=b_output_att_msks)
             outputs = model(input_ids=b_input_ids, attention_mask=b_att_msks, labels=b_output_ids)
-            
+
             loss = outputs[0]
-            
+
             print(loss.item())
             total_loss += loss.item()
             loss.backward()
@@ -174,7 +173,7 @@ def main(args):
         print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
 
     # Save the model to a file
-    file_path = args.save_path+'bart_gen_seed'+str(args.seed)+'.pt'
+    file_path = f'{args.save_path}bart_gen_seed{str(args.seed)}.pt'
     torch.save(model, file_path)
 
 if __name__ == '__main__':

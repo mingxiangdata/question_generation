@@ -18,11 +18,10 @@ parser.add_argument('--model_path', type=str, help='Load path of trained model')
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -42,7 +41,7 @@ def main(args):
 
     gen_question = "Who forced Ethelred II from his kingdom?"
     passage = "Because of this, Ethelred fled to Normandy in 1013, when he was forced from his kingdom by Sweyn Forkbeard."
-    
+
     passage_encodings_dict = tokenizer(passage, return_tensors="pt")
     inp_id = passage_encodings_dict['input_ids']
 

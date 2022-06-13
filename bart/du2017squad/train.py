@@ -50,11 +50,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -83,10 +82,7 @@ def main(args):
     output_ids = []
     input_att_msks = []
     output_att_msks = []
-    count = 0
-
-    for sentence, question in zip(sentences, questions):
-        count+=1
+    for count, (sentence, question) in enumerate(zip(sentences, questions), start=1):
         # if count==10:
         #     break
         print(count)
@@ -96,7 +92,7 @@ def main(args):
         question_encodings_dict = tokenizer(question, truncation=True, max_length=MAXLEN_question, padding="max_length")
         output_ids.append(question_encodings_dict['input_ids'])
         output_att_msks.append(question_encodings_dict['attention_mask'])        
-        #output_ids.append([x if x!=0 else -100 for x in question_encodings_dict['input_ids']])
+            #output_ids.append([x if x!=0 else -100 for x in question_encodings_dict['input_ids']])
 
     # Convert to torch tensors
     input_ids = torch.tensor(input_ids)
@@ -147,7 +143,7 @@ def main(args):
         model.train()
         for step, batch in enumerate(train_dataloader):
             # Progress update every 40 batches.
-            if step % 40 == 0 and not step == 0:
+            if step % 40 == 0 and step != 0:
                 elapsed = format_time(time.time() - t0)
                 print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
             b_input_ids = batch[0].to(device)
@@ -190,7 +186,7 @@ def main(args):
         print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
 
     # Save the model to a file
-    file_path = args.save_path+'bart_gen_seed'+str(args.seed)+'.pt'
+    file_path = f'{args.save_path}bart_gen_seed{str(args.seed)}.pt'
     torch.save(model, file_path)
 
 if __name__ == '__main__':

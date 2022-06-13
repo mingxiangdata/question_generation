@@ -43,11 +43,10 @@ def format_time(elapsed):
 
 # Set device
 def get_default_device():
-    if torch.cuda.is_available():
-        print("Got CUDA!")
-        return torch.device('cuda')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    print("Got CUDA!")
+    return torch.device('cuda')
 
 def main(args):
     if not os.path.isdir('CMDs'):
@@ -75,10 +74,7 @@ def main(args):
     input_ids = []
     output_ids = []
     input_att_msks = []
-    count = 0
-
-    for sentence, question in zip(sentences, questions):
-        count+=1
+    for count, (sentence, question) in enumerate(zip(sentences, questions), start=1):
         # if count==10:
         #     break
         print(count)
@@ -95,7 +91,7 @@ def main(args):
     input_att_msks = input_att_msks.long().to(device)
     output_ids = torch.tensor(output_ids)
     output_ids = output_ids.long().to(device)
-    
+
     train_data = TensorDataset(input_ids, input_att_msks, output_ids)
     train_sampler = RandomSampler(train_data)
     train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.batch_size)
@@ -134,7 +130,7 @@ def main(args):
     # For each batch of training data...
         for step, batch in enumerate(train_dataloader):
             # Progress update every 40 batches.
-            if step % 40 == 0 and not step == 0:
+            if step % 40 == 0 and step != 0:
                 # Calculate elapsed time in minutes.
                 elapsed = format_time(time.time() - t0)
                 # Report progress.
@@ -168,7 +164,7 @@ def main(args):
         print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
 
     # Save the model to a file
-    file_path = args.save_path+'t5_gen_seed'+str(args.seed)+'.pt'
+    file_path = f'{args.save_path}t5_gen_seed{str(args.seed)}.pt'
     torch.save(model, file_path)
 
 if __name__ == '__main__':
